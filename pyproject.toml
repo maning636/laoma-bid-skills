@@ -5,7 +5,7 @@ description = "投标文档处理技能集：8 个零大模型依赖的可组合
 readme = "README.md"
 requires-python = ">=3.10"
 license = "AGPL-3.0-only"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "老马标书贤内助" }]
 keywords = [
   "招投标", "标书", "投标文件", "清标", "报价核查", "暗标", "Word 排版",
