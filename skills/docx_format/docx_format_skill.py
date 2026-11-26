@@ -18,7 +18,7 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from skill_engine.base import Skill, SkillContext, SkillResult
 
@@ -152,7 +152,7 @@ class DocxFormatSkill(Skill):
     description = "智能排版(集成Word-Formatter-Pro引擎)"
     category = "output"
     version = "3.0.0"
-    triggers = ["排版", "格式化", "格式调整", "美化", "格式检查"]
+    triggers: ClassVar[list[str]] = ["排版", "格式化", "格式调整", "美化", "格式检查"]
 
     # ═══════════════════════ 入口 ═══════════════════════
 
@@ -264,14 +264,13 @@ class DocxFormatSkill(Skill):
                             })
 
                     expected_bold = rules.get("bold")
-                    if expected_bold is not None:
+                    if expected_bold is not None and bool(run.font.bold) != bool(expected_bold):
                         # bool(None) == False，避免"未显式加粗"被误判为与 expected=False 冲突
-                        if bool(run.font.bold) != bool(expected_bold):
-                            problems.append({
-                                "type": "bold_mismatch", "expected": expected_bold,
-                                "actual": run.font.bold, "text_preview": preview,
-                                "label": label,
-                            })
+                        problems.append({
+                            "type": "bold_mismatch", "expected": expected_bold,
+                            "actual": run.font.bold, "text_preview": preview,
+                            "label": label,
+                        })
 
                 if (label == "正文"
                         and rules.get("first_line_indent") == 2):
@@ -528,8 +527,8 @@ class DocxFormatSkill(Skill):
 
     @staticmethod
     def _apply_section_layout(doc, cfg: dict[str, Any], counters: dict[str, int]) -> None:
-        from docx.shared import Cm
         from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Cm
 
         for section in doc.sections:
             section.top_margin = Cm(cfg["margin_top"])
@@ -575,9 +574,9 @@ class DocxFormatSkill(Skill):
 
     @staticmethod
     def _apply_run_typography(runs, rules: dict[str, Any], en_font: str) -> None:
-        from docx.shared import Pt
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
+        from docx.shared import Pt
 
         cn_font = rules.get("font_name")
         pt = rules.get("font_size")
@@ -604,9 +603,9 @@ class DocxFormatSkill(Skill):
 
     @staticmethod
     def _apply_para_geometry(para, rules: dict[str, Any]) -> None:
-        from docx.shared import Pt
         from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
         from docx.oxml.ns import qn
+        from docx.shared import Pt
 
         align_key = rules.get("alignment")
         if align_key is not None:
@@ -652,10 +651,9 @@ class DocxFormatSkill(Skill):
 
     @staticmethod
     def _insert_page_number(paragraph, cfg: dict[str, Any]) -> None:
-        from docx.shared import Pt
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
-        from docx.shared import RGBColor
+        from docx.shared import Pt, RGBColor
 
         font_name = cfg.get("page_number_font", "宋体")
         font_size = cfg.get("page_number_size", 14)
@@ -679,11 +677,11 @@ class DocxFormatSkill(Skill):
 
     @staticmethod
     def _format_table(table, cfg: dict[str, Any]) -> None:
-        from docx.shared import Cm, Pt
         from docx.enum.table import WD_ROW_HEIGHT_RULE
         from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
         from docx.oxml import OxmlElement
         from docx.oxml.ns import qn
+        from docx.shared import Cm, Pt
 
         tbl_pr = table._tbl.tblPr
         if tbl_pr is None:
@@ -931,9 +929,7 @@ def _is_short_heading_text(text: str) -> bool:
         return False
     if re.search(r"[。；！？]", stripped) and len(stripped) > 15:
         return False
-    if re.match(r"^[a-zA-Z0-9\-\+,./\\()[\]]{2,}$", stripped) and len(stripped) < 20:
-        return False
-    return True
+    return not (re.match(r"^[a-zA-Z0-9\-\+,./\\()[\]]{2,}$", stripped) and len(stripped) < 20)
 
 
 def _first_match_label(

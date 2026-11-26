@@ -11,11 +11,10 @@
 
 from __future__ import annotations
 
-import io
 import json
 import logging
 from datetime import datetime
-from typing import Any
+from typing import ClassVar
 
 from skill_engine.base import Skill, SkillContext, SkillResult
 
@@ -44,7 +43,7 @@ class CheckReportExportSkill(Skill):
     description = "检查报告导出(Markdown/PDF/HTML)"
     category = "check"
     version = "1.0.0"
-    triggers = ["导出报告", "报告导出", "检查报告"]
+    triggers: ClassVar[list[str]] = ["导出报告", "报告导出", "检查报告"]
 
     async def execute(self, ctx: SkillContext) -> SkillResult:
         report_input = ctx.parameters.get("report_data", {})
@@ -93,11 +92,11 @@ class CheckReportExportSkill(Skill):
     def _md_title_block(self, proj_label: str) -> list[str]:
         """报告标题与生成信息。"""
         return [
-            f"# 投标文件检查报告",
-            f"",
+            "# 投标文件检查报告",
+            "",
             f"**项目名称**: {proj_label}",
             f"**生成时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"",
+            "",
         ]
 
     def _md_overview(self, check_rows: list, data: dict) -> list[str]:
@@ -107,8 +106,8 @@ class CheckReportExportSkill(Skill):
         risk_icon = _RISK_ICONS.get(risk_grade, "⚪")
 
         out = [
-            f"## 检查概要",
-            f"",
+            "## 检查概要",
+            "",
             f"- 风险等级: {risk_icon} {risk_grade}",
         ]
         if summary_data:
@@ -116,16 +115,16 @@ class CheckReportExportSkill(Skill):
             out.append(f"- 通过: {summary_data.get('passed', 0)}")
             out.append(f"- 不通过: {summary_data.get('failed', 0)}")
             out.append(f"- 警告: {summary_data.get('warning', 0)}")
-        out.append(f"")
+        out.append("")
         return out
 
     def _md_detail_table(self, check_rows: list) -> list[str]:
         """详细检查结果表格。"""
         out = [
-            f"## 详细检查结果",
-            f"",
-            f"| 检查项 | 要求 | 实际 | 状态 | 说明 |",
-            f"|--------|------|------|------|------|",
+            "## 详细检查结果",
+            "",
+            "| 检查项 | 要求 | 实际 | 状态 | 说明 |",
+            "|--------|------|------|------|------|",
         ]
         for check_row in check_rows:
             if not isinstance(check_row, dict):
@@ -139,7 +138,7 @@ class CheckReportExportSkill(Skill):
             out.append(
                 f"| {name} | {req_text} | {actual_text} | {status_mark} {row_status} | {detail_text} |"
             )
-        out.append(f"")
+        out.append("")
         return out
 
     def _md_failed_section(self, check_rows: list) -> list[str]:
@@ -152,8 +151,8 @@ class CheckReportExportSkill(Skill):
             return []
 
         out = [
-            f"## ❌ 不通过项详情",
-            f"",
+            "## ❌ 不通过项详情",
+            "",
         ]
         for row_num, check_row in enumerate(fail_rows, 1):
             if not isinstance(check_row, dict):
@@ -161,14 +160,14 @@ class CheckReportExportSkill(Skill):
             out.append(
                 f"### {row_num}. {check_row.get('check_name', check_row.get('check_type', ''))}"
             )
-            out.append(f"")
+            out.append("")
             out.append(f"- **招标要求**: {check_row.get('required', '')}")
             out.append(f"- **投标文件**: {check_row.get('actual', '')}")
             out.append(f"- **详细说明**: {check_row.get('detail', '')}")
             suggestion_text = check_row.get("suggestion", "")
             if suggestion_text:
                 out.append(f"- **修改建议**: {suggestion_text}")
-            out.append(f"")
+            out.append("")
         return out
 
     def _md_extra_fields(self, data: dict) -> list[str]:
@@ -178,21 +177,21 @@ class CheckReportExportSkill(Skill):
             if field_name in _REPORT_SKIP_FIELDS:
                 continue
             out.append(f"## {field_name}")
-            out.append(f"")
+            out.append("")
             if isinstance(field_value, (list, dict)):
-                out.append(f"```json")
+                out.append("```json")
                 out.append(json.dumps(field_value, ensure_ascii=False, indent=2)[:2000])
-                out.append(f"```")
+                out.append("```")
             else:
                 out.append(f"{field_value}")
-            out.append(f"")
+            out.append("")
         return out
 
     def _md_footer(self) -> list[str]:
         """报告页脚。"""
         return [
-            f"---",
-            f"*报告由 老马标书贤内助 自动生成*",
+            "---",
+            "*报告由 老马标书贤内助 自动生成*",
         ]
 
     def _render_html(self, data: dict, proj_label: str) -> str:

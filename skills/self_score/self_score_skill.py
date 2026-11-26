@@ -1,6 +1,9 @@
 """自评分估算 — F9 提交前预估分数+薄弱项标注"""
 from __future__ import annotations
+
 import logging
+from typing import ClassVar
+
 from skill_engine.base import Skill, SkillContext, SkillResult
 
 logger = logging.getLogger(__name__)
@@ -11,7 +14,7 @@ class SelfScoreSkill(Skill):
     description = "自评分估算(F9): LLM逐项估分+薄弱项标注"
     category = "check"
     version = "1.0.0"
-    triggers = ["自评分", "预估分数", "评分估算"]
+    triggers: ClassVar[list[str]] = ["自评分", "预估分数", "评分估算"]
 
     async def execute(self, ctx: SkillContext) -> SkillResult:
         scoring_rows = ctx.parameters.get("scoring_rows", [])

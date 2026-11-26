@@ -14,15 +14,15 @@ from __future__ import annotations
 
 from typing import ClassVar
 
-from skill_engine.exceptions import SkillNotFoundError
 from skill_engine.base import Skill
+from skill_engine.exceptions import SkillNotFoundError
 
 
 class SkillRegistry:
     """进程内的技能注册表（单例）。"""
 
     # 单例引用；reset() 后重新构造。
-    _instance: ClassVar["SkillRegistry | None"] = None
+    _instance: ClassVar[SkillRegistry | None] = None
     # 内存存储：skill name -> Skill 子类
     _skills: dict[str, type[Skill]]
 
@@ -30,7 +30,7 @@ class SkillRegistry:
         self._skills = {}
 
     @classmethod
-    def instance(cls) -> "SkillRegistry":
+    def instance(cls) -> SkillRegistry:
         live = cls._instance
         if live:
             return live

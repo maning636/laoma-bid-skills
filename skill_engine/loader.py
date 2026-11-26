@@ -18,13 +18,14 @@
 from __future__ import annotations
 
 import importlib.util
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import yaml
 
-from skill_engine.exceptions import SkillNotFoundError
 from skill_engine.base import Skill
+from skill_engine.exceptions import SkillNotFoundError
 
 # SKILL.md front-matter 的分隔符
 _FRONTMATTER_MARKER = "---"

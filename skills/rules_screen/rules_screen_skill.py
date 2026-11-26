@@ -33,13 +33,14 @@ from __future__ import annotations
 import logging
 import os
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
+from typing import ClassVar
 
-from rules_engine import load_rules
 from pathkit import app_root, data_root
-
+from rules_engine import load_rules
 from skill_engine.base import Skill, SkillContext, SkillResult
+
 from ..pricing_check.evidence import enrich_evidence
 
 logger = logging.getLogger(__name__)
@@ -125,9 +126,8 @@ _TOKEN_RE = re.compile(r"[\u4e00-\u9fff]{2,}")
 # 常见通用词（避免噪声命中）
 _STOPWORDS = frozenset({
     "投标", "投标书", "招标", "招标文件", "投标文件", "应当", "可以", "必须",
-    "不得", "符合", "规定", "要求", "根据", "按照", "参照", "本项目", "本项目",
-    "相关", "有关", "以上", "以下", "等类", "类项", "情形", "条件", "项目",
-    "规定", "上述", "本条", "本规定", "中标", "采购人", "招标方",
+    "不得", "符合", "规定", "要求", "根据", "按照", "参照", "本项目", "相关", "有关", "以上", "以下", "等类", "类项", "情形", "条件", "项目",
+    "上述", "本条", "本规定", "中标", "采购人", "招标方",
 })
 
 
@@ -209,9 +209,9 @@ class RulesScreenSkill(Skill):
     description = "法规规则筛查：按规则库关键词筛 bid/tender 文本，verdict 命中报条款、hint 命中出提示"
     category = "check"
     version = "1.0.0"
-    triggers = ["法规筛查", "规则筛查", "关键词筛查", "条款筛查"]
+    triggers: ClassVar[list[str]] = ["法规筛查", "规则筛查", "关键词筛查", "条款筛查"]
 
-    async def execute(self, ctx: SkillContext) -> SkillResult:  # noqa: C901
+    async def execute(self, ctx: SkillContext) -> SkillResult:
         params = ctx.parameters or {}
         tender_text: str = params.get("tender_text", "") or ""
         bid_text: str = params.get("bid_text", "") or ""

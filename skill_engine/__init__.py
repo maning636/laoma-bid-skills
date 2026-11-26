@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-__all__ = ["Skill", "SkillContext", "SkillResult", "SkillRegistry", "SkillLoader"]
+__all__ = ["Skill", "SkillContext", "SkillLoader", "SkillRegistry", "SkillResult"]
 
 # 名字 -> 所在子模块。前三个数据契约集中在 base.py，其余按职责一一对应。
 _LAZY_EXPORTS: dict[str, str] = {

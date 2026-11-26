@@ -14,8 +14,9 @@ import inspect
 import logging
 import traceback
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 if TYPE_CHECKING:  # pragma: no cover - 仅用于类型检查
@@ -92,7 +93,7 @@ class SkillContext:
     """
 
     project_id: UUID | str
-    db: "sqlalchemy.ext.asyncio.AsyncSession | None"
+    db: sqlalchemy.ext.asyncio.AsyncSession | None
     llm: Any  # LLM 网关实例；本仓库的技能均不调用大模型，保留以兼容契约
     parameters: dict = field(default_factory=dict)
     knowledge_base: Any = None
@@ -129,7 +130,7 @@ class Skill(ABC):
     description: str = ""
     category: str = ""
     version: str = "1.0.0"
-    triggers: list[str] = []
+    triggers: ClassVar[list[str]] = []
 
     @abstractmethod
     async def execute(self, ctx: SkillContext) -> SkillResult:
@@ -149,7 +150,7 @@ class Skill(ABC):
 
         try:
             outcome = await self.execute(ctx)
-        except Exception as failure:
+        except Exception as failure:  # noqa: BLE001
             return await self._abort(listener, failure)
 
         await self._publish(listener, _EVENT_COMPLETED, outcome.data)
@@ -166,7 +167,7 @@ class Skill(ABC):
             return
         try:
             await _invoke_listener(listener, self.name, event, payload)
-        except Exception:  # noqa: BLE001
+        except Exception:
             logger.debug(
                 "进度回调调用失败 name=%s event=%s",
                 self.name,

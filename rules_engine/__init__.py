@@ -6,4 +6,4 @@
 
 from rules_engine.registry import effective_rules, filter_rules, load_rules
 
-__all__ = ["load_rules", "filter_rules", "effective_rules"]
+__all__ = ["effective_rules", "filter_rules", "load_rules"]

@@ -20,8 +20,8 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 
 def load_rules(path: str | Path) -> list[dict]:
@@ -39,7 +39,7 @@ def load_rules(path: str | Path) -> list[dict]:
     except json.JSONDecodeError as e:
         raise ValueError(f"规则包 JSON 解析失败: {e}") from e
     if not isinstance(payload, dict) or not isinstance(payload.get("rules"), list):
-        raise ValueError("规则包 JSON 结构不合法：缺 rules[]")
+        raise ValueError("规则包 JSON 结构不合法：缺 rules[]")  # noqa: TRY004
     return payload["rules"]
 
 
