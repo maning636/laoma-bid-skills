@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 
 from skill_engine.base import Skill, SkillResult
@@ -33,7 +35,7 @@ class _DummySkill(Skill):
     description = "占位 skill"
     category = "check"
     version = "1.0.0"
-    triggers = ["dummy"]
+    triggers: ClassVar[list[str]] = ["dummy"]
 
     async def execute(self, ctx):  # pragma: no cover - 契约测试不执行
         return SkillResult(success=True)

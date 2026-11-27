@@ -15,6 +15,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import ClassVar
+
 from skill_engine.base import Skill, SkillContext, SkillResult
 
 _DIMENSION_WEIGHTS: dict[str, float] = {
@@ -96,7 +99,7 @@ def _rare_sequences_score(data: dict) -> float:
     return _clamp_100(len(sequences) * 30)
 
 
-_SCORERS: dict[str, "callable"] = {
+_SCORERS: dict[str, Callable[..., float]] = {
     "field_overlap": _field_overlap_score,
     "price": _price_score,
     "metadata": _metadata_score,
@@ -158,7 +161,7 @@ class RiskScoreSkill(Skill):
     description = "风险评分(C-08): 6维度加权风险评分"
     category = "check"
     version = "1.0.0"
-    triggers = ["风险评分", "风险打分", "综合风险"]
+    triggers: ClassVar[list[str]] = ["风险评分", "风险打分", "综合风险"]
 
     async def execute(self, ctx: SkillContext) -> SkillResult:
         check_results = ctx.parameters.get("check_results", {})

@@ -12,6 +12,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from skill_engine.base import Skill, SkillContext, SkillResult
 
 # 每个分类下面挂一组 SC 编号项；`check_skill` 与对应下游 skill 的 name 对齐。
@@ -83,9 +85,7 @@ def _downstream_passed(skill_resp: dict) -> bool:
     if skill_resp.get("risk_level", "") in _FAIL_RISK_LEVELS:
         return False
     summary_block = skill_resp.get("summary")
-    if isinstance(summary_block, dict) and summary_block.get("failed", 0) > 0:
-        return False
-    return True
+    return not (isinstance(summary_block, dict) and summary_block.get("failed", 0) > 0)
 
 
 def _resolve_status(check_outputs: dict, skill_key: str) -> str:
@@ -138,7 +138,7 @@ class SelfcheckListSkill(Skill):
     description = "废标自查清单(综合预防)"
     category = "check"
     version = "1.0.0"
-    triggers = ["自查", "废标自查", "提交前检查"]
+    triggers: ClassVar[list[str]] = ["自查", "废标自查", "提交前检查"]
 
     async def execute(self, ctx: SkillContext) -> SkillResult:
         check_outputs = ctx.parameters.get("check_results", {})

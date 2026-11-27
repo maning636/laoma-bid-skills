@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import re
+from typing import ClassVar
 
 from skill_engine.base import Skill, SkillContext, SkillResult
 
@@ -167,7 +168,7 @@ class PricingCheckSkill(Skill):
     description = "报价算术核查(废标预防4)"
     category = "check"
     version = "1.0.0"
-    triggers = ["报价", "算术", "价格核查"]
+    triggers: ClassVar[list[str]] = ["报价", "算术", "价格核查"]
 
     async def execute(self, ctx: SkillContext) -> SkillResult:
         tender_text = ctx.parameters.get("tender_text", "")  # noqa: F841 —— 保留以兼容契约

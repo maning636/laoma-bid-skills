@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
+from typing import ClassVar
 
 from docx import Document
 from docx.oxml.ns import qn
@@ -47,9 +48,7 @@ def _is_identity_like(value: str | None) -> bool:
     v = str(value).strip()
     if not v:
         return False
-    if v.lower() in _META_PLACEHOLDERS:
-        return False
-    return True
+    return v.lower() not in _META_PLACEHOLDERS
 
 
 def _count_images_in_hf(hf) -> int:
@@ -68,7 +67,7 @@ def _count_images_in_hf(hf) -> int:
         root = hf.element  # lxml CT_HdrFtr
         count += len(root.findall(".//" + qn("w:drawing")))
         count += len(root.findall(".//" + qn("w:pict")))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # XML 解析层解析失败时降级到关系层统计，仅记录便于排查
         logger.debug(f"header/footer XML 层解析失败: {e}")
 
@@ -79,7 +78,7 @@ def _count_images_in_hf(hf) -> int:
             ct = getattr(p, "content_type", "") or ""
             if ct.startswith("image/"):
                 count += 1
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # related_parts 遍历失败时保持现有计数，不影响整体流程
         logger.debug(f"header/footer 关系层解析失败: {e}")
 
@@ -93,7 +92,7 @@ class AnonBidCleanSkill(Skill):
     description = "暗标清洗检查：扫描 docx 中残留的公司名、Logo、作者/元数据等身份信息"
     category = "check"
     version = "1.0.0"
-    triggers = ["暗标", "匿名评标", "匿名投标", "公司名残留", "Logo残留", "元数据清洗", "身份信息"]
+    triggers: ClassVar[list[str]] = ["暗标", "匿名评标", "匿名投标", "公司名残留", "Logo残留", "元数据清洗", "身份信息"]
 
     async def execute(self, ctx: SkillContext) -> SkillResult:
         params = ctx.parameters or {}
@@ -107,12 +106,11 @@ class AnonBidCleanSkill(Skill):
         # B. 文本模式（降级）：无 file_path 但有 bid_text 时，仅做正文公司名扫描
         is_file_mode = bool(file_path) and Path(file_path).exists()
 
-        if not is_file_mode:
-            if not bid_text:
-                return SkillResult(
-                    success=False,
-                    error="需要 file_path（.docx 文件路径），或者传入 bid_text 做降级扫描",
-                )
+        if not is_file_mode and not bid_text:
+            return SkillResult(
+                success=False,
+                error="需要 file_path（.docx 文件路径），或者传入 bid_text 做降级扫描",
+            )
 
         issues: list[dict] = []
         mode_note = ""
@@ -187,7 +185,7 @@ class AnonBidCleanSkill(Skill):
         issues: list[dict] = []
         try:
             cp = doc.core_properties
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # doc.core_properties 读取失败时跳过该检查项，记录便于排查
             logger.warning(f"读取 core_properties 失败，跳过元数据检查: {e}")
             return issues
@@ -207,7 +205,7 @@ class AnonBidCleanSkill(Skill):
         for field, label, severity, suggestion in field_specs:
             try:
                 value = getattr(cp, field, "")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # 单个字段读取失败不影响其他字段检查
                 logger.debug(f"读取元数据字段 {field} 失败: {e}")
                 continue
@@ -232,7 +230,7 @@ class AnonBidCleanSkill(Skill):
                     continue
                 try:
                     linked = getattr(hf, "is_linked_to_previous", False)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     # 保守起见按未链接处理，宁可重复扫描也不漏检
                     logger.debug(f"读取 header/footer is_linked_to_previous 失败: {e}")
                     linked = False
@@ -259,7 +257,7 @@ class AnonBidCleanSkill(Skill):
         for idx, para in enumerate(doc.paragraphs, 1):
             try:
                 text = para.text or ""
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # 单个段落读取失败不影响其他段落检查
                 logger.debug(f"段落 #{idx} 读取失败: {e}")
                 continue
@@ -286,7 +284,7 @@ class AnonBidCleanSkill(Skill):
         try:
             with zipfile.ZipFile(file_path) as zf:
                 arcnames = set(zf.namelist())
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"打开 docx zip 失败: {e}")
             return issues
 
@@ -345,7 +343,7 @@ class AnonBidCleanSkill(Skill):
                                 "location": "docProps/app.xml",
                                 "suggestion": suggestion,
                             })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(f"解析 docProps 失败: {e}")
 
         return issues
@@ -365,7 +363,6 @@ if __name__ == "__main__":
 
     class _DummyLLM:
         """Skill 本体不需要 LLM，自测里放一个占位即可"""
-        pass
 
     def _make_min_png(path: str) -> None:
         """生成一个最小合法 PNG（1x1 透明像素），用于测试页眉 Logo 检测"""
@@ -407,7 +404,7 @@ if __name__ == "__main__":
             section = doc.sections[0]
             header_p = section.header.paragraphs[0]
             header_p.add_run().add_picture(png_path, width=None)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"[警告] 页眉插图失败（不影响其他测试）: {e}")
 
         doc.save(docx_path)
@@ -493,7 +490,7 @@ if __name__ == "__main__":
             os.remove(docx_path)
             os.remove(png_path)
             os.rmdir(tmp_dir)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"[warn] 自检临时文件清理失败: {e}")
 
 

@@ -18,7 +18,8 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Callable, Iterable, List, Optional, Tuple
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from .exceptions import JsonRepairError
 
@@ -48,7 +49,7 @@ _SCHEMA_SYSTEM_PROMPT = (
 )
 
 
-def _safe_json_load(text: str) -> Tuple[Any, Optional[str]]:
+def _safe_json_load(text: str) -> tuple[Any, str | None]:
     """把 json.loads 的异常归一化为 (None, 错误描述)。"""
     try:
         return json.loads(text), None
@@ -61,15 +62,15 @@ def _strip_think(text: str) -> str:
     return _THINK_BLOCK.sub("", text)
 
 
-def _take_code_block(text: str) -> Optional[str]:
+def _take_code_block(text: str) -> str | None:
     """若文本内含 ```json``` 代码块，返回其内部内容。"""
     match = _CODE_FENCE.search(text)
     return match.group(1).strip() if match else None
 
 
-def _balance_candidates(text: str) -> List[str]:
+def _balance_candidates(text: str) -> list[str]:
     """通过栈扫描提取文本中所有配对的 {...} 与 [...] 片段。"""
-    hits: List[str] = []
+    hits: list[str] = []
     for opener, closer in (("{", "}"), ("[", "]")):
         depth = 0
         start = -1
@@ -119,7 +120,7 @@ def _quote_broken_string(text: str) -> str:
     return text + '"' if in_str else text
 
 
-def _count_unclosed(text: str) -> Tuple[int, int]:
+def _count_unclosed(text: str) -> tuple[int, int]:
     return (
         max(text.count("{") - text.count("}"), 0),
         max(text.count("[") - text.count("]"), 0),
@@ -147,8 +148,7 @@ def _complete_brackets(text: str) -> str:
 def _truncate_repair(text: str) -> str:
     """综合处理被截断的 JSON：去尾逗号、无引号 key、补引号、补括号。"""
     cleaned = text.rstrip()
-    if cleaned.endswith(","):
-        cleaned = cleaned[:-1]
+    cleaned = cleaned.removesuffix(",")
     cleaned = re.sub(r":\s*\"[^\"]*$", ": null", cleaned)
     cleaned = re.sub(r":\s*$", ": null", cleaned)
     return _complete_brackets(_quote_broken_string(cleaned))
@@ -191,7 +191,7 @@ class JsonRepairEngine:
         return (block if block is not None else stripped.strip())
 
     @staticmethod
-    def try_parse(text: str) -> Tuple[Any, Optional[str]]:
+    def try_parse(text: str) -> tuple[Any, str | None]:
         """基础解析；成功返回 (obj, None)，失败返回 (None, error)。"""
         return _safe_json_load(text)
 
@@ -226,9 +226,9 @@ class JsonRepairEngine:
 
     # ----------------------- 内部管线 -----------------------
 
-    def _build_candidates(self, text: str) -> List[str]:
+    def _build_candidates(self, text: str) -> list[str]:
         """按优先级生成清洗后的候选字符串列表。"""
-        ordered: List[str] = [text]
+        ordered: list[str] = [text]
 
         def _push_unique(candidate: str) -> None:
             if candidate not in ordered:
@@ -252,7 +252,7 @@ class JsonRepairEngine:
 
         return ordered
 
-    def _attempt_pipeline(self, text: str) -> Optional[Any]:
+    def _attempt_pipeline(self, text: str) -> Any | None:
         """遍历候选列表，先尝试直接解析，再尝试基础修复。"""
         for candidate in self._build_candidates(text):
             parsed, _ = self.try_parse(candidate)
@@ -280,7 +280,7 @@ class JsonRepairEngine:
             try:
                 instance = schema.model_validate(parsed)
                 parsed = instance.model_dump()
-            except Exception as exc:  # noqa: BLE001 - 统一交给错误处理分支
+            except Exception as exc:
                 if repair_chat_fn is None or max_attempts <= 0:
                     raise JsonRepairError(f"Schema校验失败: {exc}") from exc
                 prompt_payload = json.dumps(parsed, ensure_ascii=False)
@@ -312,7 +312,7 @@ class JsonRepairEngine:
         broken: str,
         error: str,
         chat_fn: Callable,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """调用外部 chat 函数完成修复；异常时返回 None 交回主流程。"""
         messages = [
             {"role": "system", "content": _REPAIR_SYSTEM_PROMPT},

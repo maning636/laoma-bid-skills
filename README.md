@@ -8,7 +8,7 @@
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![Tests](https://img.shields.io/badge/tests-81%20passed-brightgreen)](tests/)
+[![CI](https://github.com/maning636/laoma-bid-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/maning636/laoma-bid-skills/actions/workflows/ci.yml)
 [![LLM](https://img.shields.io/badge/LLM-0%20calls-success)](README.md)
 
 ---
@@ -221,6 +221,11 @@ print(result.data["compliance_rate"])     # 43.3
 ### 暗标脱敏
 
 ```python
+import asyncio
+
+from skill_engine.base import SkillContext
+from skills.anon_bid_clean import AnonBidCleanSkill
+
 ctx = SkillContext(
     project_id="demo", db=None, llm=None,
     parameters={

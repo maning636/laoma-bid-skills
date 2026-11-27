@@ -30,7 +30,6 @@ from docx.oxml.ns import qn
 from skill_engine.base import SkillContext
 from skills.docx_format.docx_format_skill import DocxFormatSkill
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # Fixtures / helpers
 # ═══════════════════════════════════════════════════════════════════════
@@ -169,7 +168,7 @@ async def test_docx_format_heading_detection_defaults(
         )
 
     # 首段：outlineLvl 已定位 → 字体应为黑体，字号应写为对应的 h{level}_size（半磅）
-    first_text, first_lvl = expected_levels[0]
+    first_text, _first_lvl = expected_levels[0]
     para = _find_para_by_text(root, first_text)
     rPr = para.find(f"{qn('w:r')}/{qn('w:rPr')}")
     assert rPr is not None

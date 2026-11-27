@@ -12,8 +12,6 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
-
 from skill_engine import SkillContext
 from skills.pricing_check import PricingCheckSkill
 
